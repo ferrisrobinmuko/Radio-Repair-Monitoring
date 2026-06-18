@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitoring Repair - Workshop Radio</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        /* Pengkondisian warna badge sesuai teks Legend */
+        .status-ready { background-color: #10B981; color: #FFFFFF; } /* Hijau */
+        .status-repaired { background-color: #1D4ED8; color: #FFFFFF; } /* Biru */
+        .status-fwd { background-color: #EF4444; color: #FFFFFF; } /* Merah */
+        .status-default { background-color: #6B7280; color: #FFFFFF; } /* Abu-abu */
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col justify-between font-sans">
+
+    <div class="flex-grow flex items-center justify-center p-4">
+        <div class="w-full max-w-xl bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+            
+            <div class="bg-gradient-to-r from-blue-700 to-blue-900 p-6 text-center text-white">
+                <h1 class="text-2xl font-bold tracking-wide">Radio Repair Tracking</h1>
+                <p class="text-xs text-blue-200 mt-1 uppercase tracking-widest">Workshop Radio Monitoring System</p>
+            </div>
+
+            <div class="p-6 border-b border-slate-100 bg-slate-50">
+                <div class="space-y-3">
+                    <label class="block text-sm font-medium text-slate-600 text-center">
+                        Masukkan Radio ID, Remedy, atau Serial Number (SN) Perangkat
+                    </label>
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <input type="text" id="inputKunci" placeholder="CONTOH: 837TWR0015 ATAU 426TRT1464" 
+                               class="flex-grow px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none uppercase font-semibold text-center tracking-wider text-slate-700 placeholder-slate-400">
+                        <button onclick="cariRadio()" 
+                                class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition duration-200 shadow-md cursor-pointer text-center whitespace-nowrap">
+                            Cari Perangkat
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="loading" class="hidden text-center py-12 text-slate-500 font-medium animate-pulse">
+                <span class="inline-block animate-spin mr-2">🔄</span> Memeriksa database workshop...
+            </div>
+
+            <div id="dashboardHasil" class="hidden p-6 space-y-5">
+                
+                <div class="text-center">
+                    <p class="text-xs font-semibold uppercase text-slate-400 tracking-wider mb-1">Status Perangkat (Legend)</p>
+                    <span id="txtLegend" class="inline-block px-6 py-2 rounded-full text-base font-extrabold tracking-wide uppercase shadow-md status-default">
+                        -
+                    </span>
+                </div>
+
+                <div id="kotakKeteranganCHG" class="hidden mx-2 p-3 rounded-xl border text-sm font-medium text-center shadow-sm">
+                    <span id="txtKeteranganCHG"></span>
+                </div>
+
+                <div class="bg-slate-50 rounded-xl p-4 border border-slate-200 space-y-3 text-sm shadow-inner">
+                    <div class="flex justify-between border-b border-slate-200 pb-2">
+                        <span class="text-slate-500 font-medium">Radio ID / Identitas</span>
+                        <span id="txtRadioId" class="font-bold text-slate-900 tracking-wider">-</span>
+                    </div>
+                    <div class="flex justify-between border-b border-slate-200 pb-2">
+                        <span class="text-slate-500 font-medium">Serial Number</span>
+                        <span id="txtSn" class="font-mono font-bold text-slate-800 tracking-wider">-</span>
+                    </div>
+                    <div class="flex justify-between border-b border-slate-200 pb-2">
+                        <span class="text-slate-500 font-medium">Model / Deskripsi</span>
+                        <span id="txtModel" class="font-semibold text-slate-800 text-right max-w-[60%] truncate block">-</span>
+                    </div>
+                    <div class="flex justify-between border-b border-slate-200 pb-2">
+                        <span class="text-slate-500 font-medium">User / Departemen</span>
+                        <span id="txtUser" class="font-medium text-slate-800 text-right">-</span>
+                    </div>
+                    <div class="flex justify-between border-b border-slate-200 pb-2">
+                        <span class="text-slate-500 font-medium">Internal Status</span>
+                        <span id="txtInternalStatus" class="font-bold text-blue-700 uppercase">-</span>
+                    </div>
+                    <div class="flex flex-col pt-1 space-y-1">
+                        <span class="text-slate-500 font-medium">Kerusakan (Problem):</span>
+                        <p id="txtProblem" class="text-slate-700 bg-white p-2 rounded border border-slate-100 font-serif italic text-xs shadow-sm">-</p>
+                    </div>
+                </div>
+
+                <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 shadow-sm">
+                    <h4 class="text-xs font-bold text-blue-800 uppercase tracking-wider mb-2">💡 Tindakan / Action Be Taken:</h4>
+                    <p id="txtAction" class="text-sm text-blue-950 font-medium leading-relaxed bg-white/60 p-3 rounded-lg border border-blue-100 shadow-sm">-</p>
+                </div>
+
+            </div>
+
+            <div id="errorNotif" class="hidden m-6 p-4 bg-red-50 border border-red-200 text-red-700 text-center rounded-xl text-sm font-semibold shadow-sm">
+                ❌ Data perangkat tidak ditemukan. Pastikan ID, Remedy, atau Serial Number sudah benar.
+            </div>
+
+        </div>
+    </div>
+
+    <footer class="text-center py-4 text-xs text-slate-400 bg-white border-t border-slate-200 w-full">
+        &copy; 2026 Workshop Radio Support System. All Rights Reserved.
+    </footer>
+
+    <script>
+        function cariRadio() {
+            var inputKey = document.getElementById('inputKunci').value;
+            var loading = document.getElementById('loading');
+            var dashboard = document.getElementById('dashboardHasil');
+            var errorNotif = document.getElementById('errorNotif');
+
+            if(!inputKey.trim()) {
+                alert("Silakan masukkan kata kunci pencarian terlebih dahulu!");
+                return;
+            }
+
+            loading.classList.remove('hidden');
+            dashboard.classList.add('hidden');
+            errorNotif.classList.add('hidden');
+
+            // --- paste URL WEB APP /EXEC BARU ANDA DI SINI ---
+            var urlAPI = "https://script.google.com/macros/s/AKfycbzqCtLk7iF4kP43K9e7pxDWzgIz4lUE7sjTX4d13N0AHBufGWswbR5FTfY_SqMaZl1EFg/exec?key=" + encodeURIComponent(inputKey);
+
+            fetch(urlAPI)
+            .then(response => response.json())
+            .then(data => {
+                loading.classList.add('hidden');
+
+                if(data.status === "success") {
+                    document.getElementById('txtRadioId').innerText = data.radio_id || "-";
+                    document.getElementById('txtSn').innerText = data.serial_number || "-";
+                    document.getElementById('txtModel').innerText = data.model || "-";
+                    document.getElementById('txtUser').innerText = (data.user_name + " / " + data.department) || "-";
+                    document.getElementById('txtInternalStatus').innerText = data.internal_status || "-";
+                    document.getElementById('txtProblem').innerText = data.problem || "Tidak ada catatan kerusakan.";
+                    document.getElementById('txtAction').innerText = data.action || "Tahap pengecekan awal.";
+
+                    // Deklarasi Elemen Status dan Kotak Info Tambahan CHG
+                    var badgeLegend = document.getElementById('txtLegend');
+                    var kotakCHG = document.getElementById('kotakKeteranganCHG');
+                    var txtCHG = document.getElementById('txtKeteranganCHG');
+                    var legendMentah = data.legend_status ? data.legend_status.toLowerCase().trim() : "";
+                    
+                    // Reset Tampilan Awal Kotak Keterangan CHG
+                    kotakCHG.classList.add('hidden');
+
+                    badgeLegend.innerText = data.legend_status;
+                    badgeLegend.className = "inline-block px-6 py-2 rounded-full text-base font-extrabold tracking-wide uppercase shadow-md"; 
+
+                    // Jalankan Logika Klasifikasi Status Legend
+                    if (legendMentah.includes('ready')) {
+                        badgeLegend.classList.add('status-ready');
+                        badgeLegend.innerText = "READY / SIAP DIAMBIL";
+                    } else if (legendMentah.includes('repaired')) {
+                        badgeLegend.classList.add('status-repaired');
+                        badgeLegend.innerText = "REPAIRED (SELESAI PERBAIKAN)";
+                    } else if (legendMentah.includes('fwd') || legendMentah.includes('chg')) {
+                        badgeLegend.classList.add('status-fwd');
+                        badgeLegend.innerText = "FWD TO CHG (DALAM ANTRIAN)";
+                        
+                        // Menampilkan Kotak Keterangan Pendukung
+                        kotakCHG.classList.remove('hidden');
+                        var rekomendasiMentah = data.recommandation ? data.recommandation.toLowerCase().trim() : "";
+
+                        if (rekomendasiMentah.includes('battery')) {
+                            // Style Oranye/Amber untuk Penggantian Baterai
+                            kotakCHG.className = "mx-6 my-2 p-3 rounded-xl border border-amber-200 bg-amber-50 text-amber-900 text-xs font-semibold text-center shadow-sm";
+                            txtCHG.innerHTML = "⚠️ <strong>Keterangan:</strong> Perangkat menunggu antrean proses pengadaan/pembelian <strong>Baterai Baru</strong>.";
+                        } else if (rekomendasiMentah.includes('unit')) {
+                            // Style Merah Terang untuk Ganti Unit Radio (Swap)
+                            kotakCHG.className = "mx-6 my-2 p-3 rounded-xl border border-red-200 bg-red-50 text-red-900 text-xs font-semibold text-center shadow-sm";
+                            txtCHG.innerHTML = "🚨 <strong>Keterangan:</strong> Kerusakan fatal komponen inti, direkomendasikan untuk <strong>Ganti Unit Radio Baru (SWAP)</strong>.";
+                        } else {
+                            // Style Netral / Fallback
+                            kotakCHG.className = "mx-6 my-2 p-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 text-xs font-semibold text-center shadow-sm";
+                            txtCHG.innerHTML = "ℹ️ <strong>Keterangan:</strong> Perangkat dalam status peninjauan pengadaan material pendukung workshop.";
+                        }
+                    } else {
+                        badgeLegend.classList.add('status-default');
+                    }
+
+                    dashboard.classList.remove('hidden');
+                } else {
+                    errorNotif.classList.remove('hidden');
+                }
+            })
+            .catch(error => {
+                loading.classList.add('hidden');
+                alert("Gagal terhubung ke database server. Periksa kembali URL API.");
+                console.error("Error Detail:", error);
+            });
+        }
+    </script>
+</body>
+</html>
